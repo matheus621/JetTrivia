@@ -30,6 +30,9 @@ import androidx.compose.ui.unit.sp
 import com.example.jettrivia.model.QuestionItem
 import com.example.jettrivia.screens.QuestionsViewModel
 import com.example.jettrivia.util.AppColors
+import com.google.mlkit.nl.translate.TranslateLanguage
+import com.google.mlkit.nl.translate.Translation
+import com.google.mlkit.nl.translate.TranslatorOptions
 import org.w3c.dom.Text
 
 
@@ -85,6 +88,26 @@ fun QuestionDisplay(
             correctAnswerState.value = choicesState[it] == question.answer
         }
     }
+
+    val options = TranslatorOptions.Builder()
+        .setSourceLanguage(TranslateLanguage.ENGLISH)
+        .setTargetLanguage(TranslateLanguage.PORTUGUESE)
+        .build()
+
+    val translator = Translation.getClient(options)
+
+    val questionTranslator = remember { mutableStateOf("") }
+
+    LaunchedEffect(question) {
+        translator.downloadModelIfNeeded()
+            .addOnSuccessListener {
+                translator.translate(question.question)
+                    .addOnSuccessListener { translatedText ->
+                        questionTranslator.value = translatedText
+                    }
+            }
+    }
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -103,7 +126,7 @@ fun QuestionDisplay(
 
             Column {
                 Text(
-                    text = question.question,
+                    text = questionTranslator.value,
                     modifier = Modifier
                         .padding(6.dp)
                         .align(alignment = Alignment.Start)
